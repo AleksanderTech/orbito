@@ -2,6 +2,10 @@
 
 Orbito is a static site generator (SSG) written in JavaScript using Node.js. It allows you to generate static HTML files with bundled JavaScript for your web pages.
 
+## Requirements
+
+- Node v20 or later
+
 ## Orbito in Node.js
 
 With just a few lines of simple Node.js code, you're ready to go with Orbito:
@@ -35,10 +39,6 @@ export class Home extends Component {
 In Orbito you can easily use "orbito.page" and "orbito.pages" right in your Node.js scripts.
 
 This means you can add Orbito to your existing Node.js projects without extra hassle.
-
-## Requirements
-
-- Node v20 or later
 
 ## Getting Started
 
