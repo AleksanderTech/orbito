@@ -13,6 +13,7 @@
     "type": "git",
     "url": "https://github.com/AleksanderTech/orbito"
   },
+  "homepage": "https://github.com/AleksanderTech/orbito#readme",
   "author": "Aleksander Roztropiński",
   "license": "ISC",
   "dependencies": {
