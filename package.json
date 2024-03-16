@@ -1,6 +1,6 @@
 {
   "name": "orbito",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "description": "Orbito is a static site generator (SSG) written in JavaScript using Node.js.",
   "main": "index.js",
@@ -9,6 +9,9 @@
     "SSG",
     "static site generator"
   ],
+  "repository": {
+    "url": ""
+  },
   "author": "Aleksander Roztropiński",
   "license": "ISC",
   "dependencies": {

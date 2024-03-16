@@ -1,6 +1,4 @@
-# Orbito Concept (SSG framework)
-
-This is not a regular library. It's a showcase of the Orbito concept.
+# Orbito (SSG framework)
 
 Orbito is a static site generator (SSG) written in JavaScript using Node.js. It allows you to generate static HTML files with bundled JavaScript for your web pages.
 
