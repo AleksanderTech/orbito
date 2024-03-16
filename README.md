@@ -7,8 +7,8 @@ Orbito is a static site generator (SSG) written in JavaScript using Node.js. It 
 With just a few lines of simple Node.js code, you're ready to go with Orbito:
 
 ```js
-import { Orbito } from "./orbito/orbito.js";
-import { Home } from "./src/pages/home.js";
+import { Orbito } from "orbito";
+import { Home } from "./src/home.js";
 
 const orbito = new Orbito();
 await orbito.page({ component: Home, filePath: "home.js", route: "/home" });
@@ -19,7 +19,7 @@ This call will generate a single HTML file for the "Home" page and save it under
 You don't need any magical syntax. Orbito components are written in vanilla JavaScript:
 
 ```js
-import { Component } from "../../orbito/component.js";
+import { Component } from "orbito/component.js";
 
 export class Home extends Component {
   html() {
@@ -45,7 +45,7 @@ This means you can add Orbito to your existing Node.js projects without extra ha
 To use Orbito, simply import Orbito and create an instance:
 
 ```js
-import { Orbito } from "./orbito/orbito.js";
+import { Orbito } from "orbito";
 
 const orbito = new Orbito();
 ```
@@ -55,7 +55,7 @@ const orbito = new Orbito();
 Orbito configuration with default values:
 
 ```js
-import { Orbito } from "./orbito/orbito.js";
+import { Orbito } from "orbito";
 
 const orbito = new Orbito({
   // Path to the directory containing components
@@ -76,7 +76,7 @@ const orbito = new Orbito({
 });
 ```
 
-## Generating The Page
+## Generating Single Page
 
 If you want to generate a single page (one HTML file) with Orbito, you can use the orbito.page method. This method allows you to define a specific page along with its associated route.
 
@@ -89,5 +89,22 @@ await orbito.page({ component: Home, filePath: "home.js", route: "/home" });
 - filePath: Specifies the file path where the component is declared. This can be a simple file name or a path if the file is located deeper in the directory structure.
 
 - route: Defines the route path for the page. This parameter is a string representing the URL path at which the page will be accessible.
+
+## Generating Multiple Pages
+
+If you need to generate multiple pages with Orbito, you can use the orbito.pages method. This method returns list of components that are located under the given path.
+
+```js
+// given components are located under ${orbito.componentsPath}/posts
+const posts = await orbito.pages("posts");
+
+for (const post of posts) {
+  await orbito.page({
+    component: post.componentClass,
+    filePath: `posts/${post.filename}`,
+    route: post.componentClass.slug,
+  });
+}
+```
 
 ### Happy coding!
