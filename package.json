@@ -1,9 +1,8 @@
 {
   "name": "orbito",
   "version": "1.0.0",
-  "type": "module",
-  "main": "lib/index.cjs",
-  "module": "lib/index.js",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "description": "Orbito is a static site generator (SSG) written in JavaScript using Node.js.",
   "scripts": {
     "build": "tsc && tsup src --format cjs,esm --dts --clean --outDir lib"

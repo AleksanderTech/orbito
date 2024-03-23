@@ -26,15 +26,14 @@ export const pagePlugin = async (page) => {
         let contents = await readFile(args.path, { encoding: "utf-8" });
         // check whether there is a component in the file
         let component = componentsWithoutPage.find((c) => contents.includes(c.constructor.toString()));
-
         // if a file is a component
         if (component) {
           const constructorName = component.constructor.name;
+          // remove html method to reduce bundle size and register component in the global scope
           const modifiedContents = `
             ${contents.replace(component.html.toString(), "")}
             globalThis.${constructorName} = ${constructorName};
           `;
-          // remove html method to reduce bundle size and register component in the global scope
           return {
             contents: modifiedContents,
             loader: "js",
