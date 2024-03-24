@@ -23,7 +23,7 @@ This call will generate a single HTML file for the "Home" page and save it under
 You don't need any magical syntax. Orbito components are written in vanilla JavaScript:
 
 ```js
-import { Component } from "orbito/component.js";
+import { Component } from "orbito/lib/component.js";
 
 export class Home extends Component {
   html() {
@@ -41,6 +41,10 @@ In Orbito you can easily use "orbito.page" and "orbito.pages" right in your Node
 This means you can add Orbito to your existing Node.js projects without extra hassle.
 
 ## Getting Started
+
+```bash
+npm i orbito
+```
 
 To use Orbito, simply import Orbito and create an instance:
 
