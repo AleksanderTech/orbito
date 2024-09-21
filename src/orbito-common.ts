@@ -29,8 +29,9 @@ export async function runCommand(command) {
 
 export async function copyPublicAssets(publicDir, outDir) {
   try {
-    await mkdir(outDir, { recursive: true });
     const publicAssets = await readdir(publicDir, { withFileTypes: true });
+    if(!publicAssets.length) return;
+    await mkdir(outDir, { recursive: true });
 
     for (const asset of publicAssets) {
       const sourceFilePath = p.join(publicDir, asset.name);

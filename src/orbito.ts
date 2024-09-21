@@ -12,6 +12,7 @@ globalThis.md = String.raw;
 globalThis.js = String.raw;
 
 export class Orbito {
+  ssr: boolean;
   componentsPath: string;
   assetsPath: string;
   assetsDir: string;
@@ -22,6 +23,7 @@ export class Orbito {
   assetsOutPath: string;
 
   constructor({
+    ssr = false,
     componentsPath = "src",
     assetsPath = "src/assets",
     publicPath = "public",
@@ -29,6 +31,7 @@ export class Orbito {
     jsPlaceholder = "|js|",
     integrations = {},
   } = {}) {
+    this.ssr = ssr;
     this.componentsPath = convertUserPath(componentsPath);
     this.assetsPath = convertUserPath(assetsPath);
     this.assetsDir = p.basename(this.assetsPath);
@@ -42,11 +45,12 @@ export class Orbito {
   async page({ component, filePath, route }) {
     component = component instanceof Component ? component : new component();
     filePath = convertUserPath(filePath);
-    route = convertUserPath(route);
-    const pageDir = p.join(this.outPath, route);
-
-    // create page dir if does not exist
-    await mkdir(pageDir, { recursive: true });
+    
+    if (!this.ssr) {
+      route = convertUserPath(route);
+      const pageDir = p.join(this.outPath, route);
+      await mkdir(pageDir, { recursive: true });
+    }
 
     // get page html string
     let html = await component.html();
@@ -78,7 +82,11 @@ export class Orbito {
     // inject bundled js into html and write the result to the destination directory
     const bundledJs = esbuildOutput.outputFiles[0].text;
     html = html.replace(this.jsPlaceholder, bundledJs);
-    await writeFile(p.join(this.outPath, route, "index.html"), html, { encoding: "utf-8" });
+    if (this.ssr) {
+      return html;
+    } else {
+      await writeFile(p.join(this.outPath, route, "index.html"), html, { encoding: "utf-8" });
+    }
   }
 
   async pages(path) {
