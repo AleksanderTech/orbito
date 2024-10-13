@@ -5,7 +5,10 @@ export const pagePlugin = async (page) => {
   const generatePageCode = (componentsWithPage) => {
     // create a string representation of components with their ids
     const componentsString = componentsWithPage
-      .map(({ constructor, id }) => `(()=> { const comp = new ${constructor.name}(); comp.id = "${id}"; return comp; })()`)
+      .map(
+        ({ constructor, id }) =>
+          `(()=> { const comp = new ${constructor.name}(); comp.id = "${id}"; return comp; })()`
+      )
       .join(",");
 
     // code to initialize components and execute their 'js' method
@@ -24,8 +27,12 @@ export const pagePlugin = async (page) => {
       build.onLoad({ filter: new RegExp(`\.(mjs|js|ts)$`) }, async (args) => {
         // read file content
         let contents = await readFile(args.path, { encoding: "utf-8" });
+        const fileExtension = args.path.split(".").pop();
+        const loaderType = fileExtension === "ts" ? "ts" : "js";
         // check whether there is a component in the file
-        let component = componentsWithoutPage.find((c) => contents.includes(c.constructor.toString()));
+        let component = componentsWithoutPage.find((c) =>
+          contents.includes(c.constructor.toString())
+        );
         // if a file is a component
         if (component) {
           const constructorName = component.constructor.name;
@@ -34,9 +41,10 @@ export const pagePlugin = async (page) => {
             ${contents.replace(component.html.toString(), "")}
             globalThis.${constructorName} = ${constructorName};
           `;
+
           return {
             contents: modifiedContents,
-            loader: "js",
+            loader: loaderType,
           };
         }
 
@@ -47,10 +55,10 @@ export const pagePlugin = async (page) => {
             ${contents.replace(page.html.toString(), "")}
             ${generatePageCode(componentsWithPage)}
           `;
-          return { contents: modifiedContents, loader: "js" };
+          return { contents: modifiedContents, loader: loaderType };
         }
 
-        return { contents, loader: "js" };
+        return { contents, loader: loaderType };
       });
     },
   };
