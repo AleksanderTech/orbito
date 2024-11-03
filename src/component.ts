@@ -8,7 +8,7 @@ export class Component {
   }
 
   useComponent(component) {
-    const instance = component instanceof Component ? component : new component();
+    const instance = component = typeof component == 'function' ? new component() : component;
     this.components.push(instance);
     return instance;
   }

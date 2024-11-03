@@ -43,7 +43,7 @@ export class Orbito {
   }
 
   async page({ component, filePath, route }) {
-    component = component instanceof Component ? component : new component();
+    component = typeof component == 'function' ? new component() : component;
     filePath = convertUserPath(filePath);
     
     if (!this.ssr) {
