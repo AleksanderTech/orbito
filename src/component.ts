@@ -1,14 +1,12 @@
 export class Component {
   components = [];
   assets = [];
-  id;
 
-  constructor({ id = `o-${crypto.randomUUID()}` } = {}) {
-    this.id = id;
-  }
+  constructor({} = {}) {}
 
   useComponent(component) {
-    const instance = component = typeof component == 'function' ? new component() : component;
+    const instance = (component =
+      typeof component == "function" ? new component() : component);
     this.components.push(instance);
     return instance;
   }
