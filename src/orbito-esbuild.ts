@@ -12,15 +12,27 @@ const transformCode = (code: string): string => {
   }).code;
 };
 
-// safely extract the name of the method
-const getMethodName = (keyNode: {
-  type: string;
-  name: string | null;
-}): string | null => {
-  if (keyNode.type === "Identifier" || keyNode.type === "PrivateIdentifier") {
-    return keyNode.name;
-  }
-  return null;
+const extractAliasMap = (code: string): Map<string, string> => {
+  const aliasMap = new Map<string, string>();
+  const ast = parse(code, { ecmaVersion: "latest", sourceType: "module" });
+
+  walk.simple(ast, {
+    ImportDeclaration(node) {
+      node.specifiers.forEach((specifier) => {
+        if (specifier.type === "ImportSpecifier") {
+          if (specifier.imported.type === "Identifier") {
+            aliasMap.set(specifier.local.name, specifier.imported.name);
+          }
+        } else if (specifier.type === "ImportDefaultSpecifier") {
+          aliasMap.set(specifier.local.name, "default");
+        } else if (specifier.type === "ImportNamespaceSpecifier") {
+          aliasMap.set(specifier.local.name, "*");
+        }
+      });
+    },
+  });
+
+  return aliasMap;
 };
 
 // check if the string contains the correct class
@@ -29,51 +41,81 @@ const isClassMatchingInstance = (
   targetClassName: string,
   targetSuperClassName: string
 ): boolean => {
+  const aliasMap = extractAliasMap(code);
+
   const ast = parse(code, { ecmaVersion: "latest", sourceType: "module" });
   let matches = false;
 
-  walk.simple(ast, {
-    ClassDeclaration(node: any) {
-      const className: string = node.id?.name || "";
-      const superClassName: string | null =
-        node.superClass && node.superClass.type === "Identifier"
-          ? node.superClass.name
-          : null;
+  const processClassNode = (node: any) => {
+    const className: string = node.id?.name || "AnonymousClass";
+    const superClassName: string | null =
+      node.superClass && node.superClass.type === "Identifier"
+        ? node.superClass.name
+        : null;
 
-      if (
-        className === targetClassName &&
-        superClassName === targetSuperClassName
-      ) {
-        matches = true;
-      }
-    },
+    const resolvedSuperClassName =
+      aliasMap.get(superClassName || "") || superClassName;
+
+    if (
+      className === targetClassName &&
+      resolvedSuperClassName === targetSuperClassName
+    ) {
+      matches = true;
+    }
+  };
+  
+  walk.simple(ast, {
+    ClassDeclaration: processClassNode,
+    ClassExpression: processClassNode,
   });
 
   return matches;
 };
 
-// remove a specific method (e.g., `html`) by slicing it from the original code
-const removeMethodFromClass = (code: string, methodName: string): string => {
+const removeMethodFromClass = (
+  code: string,
+  methodName: string,
+  targetSuperClassName: string
+): string => {
   const ast = parse(code, { ecmaVersion: "latest", sourceType: "module" });
-  let methodToRemove: { start: number; end: number } | null = null;
+  const rangesToRemove: { start: number; end: number }[] = [];
+
+  const processClassNode = (node: any) => {
+    const superClassName =
+      node.superClass && node.superClass.type === "Identifier"
+        ? node.superClass.name
+        : null;
+
+    node.body.body.forEach((classElement: any) => {
+      if (classElement.type === "MethodDefinition") {
+        const name =
+          classElement.key.type === "Identifier"
+            ? classElement.key.name
+            : null;
+
+        if (name === methodName && superClassName === targetSuperClassName) {
+          rangesToRemove.push({
+            start: classElement.start,
+            end: classElement.end,
+          });
+        }
+      }
+    });
+  };
 
   walk.simple(ast, {
-    MethodDefinition(node: any) {
-      const name = getMethodName(node.key);
-      if (name === methodName) {
-        methodToRemove = { start: node.start, end: node.end };
-      }
-    },
+    ClassExpression: processClassNode,
+    ClassDeclaration: processClassNode,
   });
 
-  if (!methodToRemove) {
-    throw new Error('Orbito components must include an html() method. Please add it.');
-  }
+  let modifiedCode = code;
+  rangesToRemove.reverse().forEach(({ start, end }) => {
+    const beforeMethod = modifiedCode.slice(0, start);
+    const afterMethod = modifiedCode.slice(end);
+    modifiedCode = beforeMethod + afterMethod;
+  });
 
-  // use the start and end positions to slice the method out of the original code
-  const beforeMethod = code.slice(0, methodToRemove.start);
-  const afterMethod = code.slice(methodToRemove.end);
-  return beforeMethod + afterMethod;
+  return modifiedCode;
 };
 
 export const pagePlugin = async (page) => {
@@ -105,20 +147,23 @@ export const pagePlugin = async (page) => {
         contents = transformCode(contents);
         const fileExtension = args.path.split(".").pop();
         const loaderType = fileExtension === "ts" ? "ts" : "js";
+
         // check whether there is a component in the file
-        let component = componentsWithoutPage.find((c) =>
-          isClassMatchingInstance(contents, c.constructor.name, "Component")
-        );
+        let component = componentsWithoutPage.find((c) => {
+          return isClassMatchingInstance(
+            contents,
+            c.constructor.name,
+            "Component"
+          );
+        });
+
         // if a file is a component
         if (component) {
           const constructorName = component.constructor.name;
-
-          // remove html method to reduce bundle size and register component in the global scope
           const modifiedContents = `
-            ${removeMethodFromClass(contents, "html")}
-            globalThis.${constructorName} = ${constructorName};
-          `;
-
+          ${contents}
+          globalThis.${constructorName} = ${constructorName};
+        `;
           return { contents: modifiedContents, loader: loaderType };
         }
 
@@ -128,13 +173,42 @@ export const pagePlugin = async (page) => {
         ) {
           // remove html method to reduce bundle size and generate page code
           const modifiedContents = `
-            ${removeMethodFromClass(contents, "html")}
+            ${contents}
             ${generatePageCode(componentsWithPage)}
+            globalThis.${page.constructor.name} = ${page.constructor.name};
+            globalThis.Component = Component;
           `;
           return { contents: modifiedContents, loader: loaderType };
         }
 
         return { contents, loader: loaderType };
+      });
+
+      build.onEnd((result) => {
+        const updatedOutputFiles = result.outputFiles.map((file) => {
+          let contents = file.text;
+
+          // js proper variable regex
+          const match = contents.match(
+            /globalThis\.Component=([a-zA-Z_$][\w$]*)/
+          );
+
+          if (match) {
+            const superClassName = match[1];
+            contents = `${removeMethodFromClass(
+              contents,
+              "html",
+              superClassName
+            )}`;
+          }
+
+          return {
+            ...file,
+            text: contents,
+          };
+        });
+
+        result.outputFiles = updatedOutputFiles;
       });
     },
   };
