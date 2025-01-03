@@ -1,7 +1,6 @@
 import { readFile, writeFile, mkdir, readdir } from "fs/promises";
 import * as esbuild from "esbuild";
 import * as p from "path";
-import { createHash } from "crypto";
 import {
   treeToList,
   copyPublicAssets,
@@ -12,6 +11,11 @@ import { pagePlugin } from "./orbito-esbuild";
 import { Component } from "./component";
 import { pathToFileURL } from "url";
 import { LRUCache } from "./cache/lru-cache";
+import { createHash } from "crypto";
+
+const generateHash = (data) => {
+  return createHash("sha256").update(data).digest("hex");
+};
 
 globalThis.html = String.raw;
 globalThis.md = String.raw;
@@ -27,7 +31,7 @@ export class Orbito {
   jsPlaceholder: string;
   integrations: { tailwindCss?: { cssPath: string } };
   assetsOutPath: string;
-  bundledJsByHtmlCache = new LRUCache<{ bundledJs: string }>(60, 100);
+  bundledJsByHtmlCache: LRUCache<{ bundledJs: string }>;
 
   constructor({
     ssr = false,
@@ -37,6 +41,7 @@ export class Orbito {
     outPath = "out",
     jsPlaceholder = "|js|",
     integrations = {},
+    cacheConfig = { timeInSec: 300, maxSize: 300 }, 
   } = {}) {
     this.ssr = ssr;
     this.componentsPath = convertUserPath(componentsPath);
@@ -47,6 +52,10 @@ export class Orbito {
     this.jsPlaceholder = jsPlaceholder;
     this.integrations = integrations;
     this.assetsOutPath = p.join(this.outPath, this.assetsDir);
+    this.bundledJsByHtmlCache = new LRUCache<{ bundledJs: string }>(
+      cacheConfig.timeInSec,
+      cacheConfig.maxSize
+    );
   }
 
   async page({ component, filePath, route }) {
@@ -80,7 +89,9 @@ export class Orbito {
       assetsMap
     );
 
-    let bundledJs = this.bundledJsByHtmlCache.get(html)?.bundledJs;
+    let bundledJs = this.bundledJsByHtmlCache.get(
+      generateHash(html)
+    )?.bundledJs;
     if (!bundledJs) {
       const esbuildOutput = await esbuild.build({
         entryPoints: [p.join(this.componentsPath, filePath)],
@@ -93,7 +104,10 @@ export class Orbito {
 
       // inject bundled js into html and write the result to the destination directory
       bundledJs = esbuildOutput.outputFiles[0].text;
-      this.bundledJsByHtmlCache.set({ key: html, data: { bundledJs } });
+      this.bundledJsByHtmlCache.set({
+        key: generateHash(html),
+        data: { bundledJs },
+      });
     }
 
     html = html.replace(this.jsPlaceholder, bundledJs);
