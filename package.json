@@ -26,7 +26,7 @@
     "type": "git",
     "url": "git+https://github.com/AleksanderTech/orbito.git"
   },
-  "homepage": "https://github.com/AleksanderTech/orbito#readme",
+  "homepage": "https://www.npmjs.com/package/orbito",
   "author": "Aleksander Roztropiński",
   "license": "MIT",
   "dependencies": {

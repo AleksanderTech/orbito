@@ -1,3 +1,5 @@
+[![npm version](https://img.shields.io/npm/v/orbito.svg)](https://www.npmjs.com/package/orbito)
+
 # Orbito (SSG + SSR)
 
 Orbito is a Node.js site generator that can write static HTML files or return server-rendered HTML, with a bundled client script when you need it.
