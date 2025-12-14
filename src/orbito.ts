@@ -166,7 +166,7 @@ export class Orbito {
 
       for (const asset of assets) {
         if (asset.isFile()) {
-          const filePath = p.join(asset.path, asset.name);
+          const filePath = p.join(asset['path'] || asset.parentPath, asset.name);
           const file = await readFile(filePath);
           const fileHash = await createHash("sha256")
             .update(file)
