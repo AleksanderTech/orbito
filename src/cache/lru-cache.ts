@@ -5,11 +5,7 @@ function isTimestampExpired(timestampMs: number, timeInSec: number): boolean {
   const nowInSec = new Date().getTime() / 1000;
   const timestampInSec = timestampMs / 1000;
 
-  if (timestampInSec + timeInSec > nowInSec) {
-    return false;
-  } else {
-    return true;
-  }
+  return timestampInSec + timeInSec < nowInSec;
 }
 
 export class LRUCache<T> implements Cache<T> {
