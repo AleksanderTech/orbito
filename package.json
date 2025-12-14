@@ -14,7 +14,7 @@
     },
     "./*": "./*"
   },
-  "description": "Orbito is a static site generator (SSG) written in JavaScript using Node.js.",
+  "description": "Orbito is a Node.js site generator (SSG + SSR) that can write static HTML files or return server-rendered HTML, with a bundled client script when you need it",
   "scripts": {
     "build": "tsc && tsup src --format cjs,esm --dts --clean --outDir lib"
   },
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/AleksanderTech/orbito"
+    "url": "git+https://github.com/AleksanderTech/orbito.git"
   },
   "homepage": "https://github.com/AleksanderTech/orbito#readme",
   "author": "Aleksander Roztropiński",
@@ -35,7 +35,7 @@
     "esbuild": "^0.20.1"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30",
+    "@types/node": "^24.0.0",
     "tsup": "^8.0.2",
     "typescript": "^5.4.3"
   },
