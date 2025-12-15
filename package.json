@@ -20,7 +20,9 @@
   },
   "keywords": [
     "SSG",
-    "static site generator"
+    "static site generator",
+    "SSR",
+    "server side rendering"
   ],
   "repository": {
     "type": "git",
